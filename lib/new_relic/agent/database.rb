@@ -57,13 +57,19 @@ module NewRelic
             connection = get_connection(config)
             plan = nil
             if connection
-              plan = process_resultset(connection.execute("EXPLAIN #{statement}"))
+              sql = "EXPLAIN #{statement}"
+
+              if connection.respond_to?(:schema_search_path)
+                sql.prepend "SET search_path TO #{connection.schema_search_path};"
+              end
+
+              plan = process_resultset(connection.execute(sql))
             end
             return plan
           end
         end
       end
-      
+
       def process_resultset(items)
         # The resultset type varies for different drivers.  Only thing you can count on is
         # that it implements each.  Also: can't use select_rows because the native postgres
